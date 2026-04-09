@@ -1,1 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartFinance AI</title>
 
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        p {
+            color: gray;
+            margin-bottom: 30px;
+        }
+
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #4facfe;
+            border-radius: 10px;
+            width: 80%;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            background: #4facfe;
+            color: white;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #007bff;
+            transform: scale(1.05);
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: #f5f7fa;
+        }
+
+        .result h2 {
+            color: #4facfe;
+        }
+
+        img {
+            margin-top: 20px;
+            border-radius: 10px;
+            width: 100%;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: gray;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>💰 SmartFinance AI</h1>
+    <p>Analyze your expenses and predict future spending using AI 🚀</p>
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <br>
+        <button type="submit">Analyze Now</button>
+    </form>
+
+    {% if prediction %}
+    <div class="result">
+        <h2>📊 Predicted Next Month: ₹{{ prediction }}</h2>
+        <img src="{{ url_for('static', filename='chart.png') }}">
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        Built with ❤️ using Flask & AI
+    </div>
+</div>
+
+</body>
+</html>
