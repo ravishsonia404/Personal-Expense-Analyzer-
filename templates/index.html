@@ -57,6 +57,18 @@
 
         <img src="{{ url_for('static', filename='chart.png') }}">
         <img src="{{ url_for('static', filename='pie.png') }}">
+
+        <br><br>
+<a href="{{ url_for('static', filename='report.pdf') }}" download>
+    <button>📄 Download Report</button>
+</a>
+<!--        {% if pdf_file %}-->
+<!--        <br><br>-->
+<!--        <a href="{{ url_for('static', filename='report.pdf') }}" download>-->
+<!--            <button>📄 Download Report</button>-->
+<!--        </a>-->
+<!--        {% endif %}-->
+
     {% endif %}
 
 </div>
