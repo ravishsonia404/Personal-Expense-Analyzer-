@@ -1,54 +1,104 @@
 from flask import Flask, render_template, request
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 import numpy as np
 import os
 
+# Fix for matplotlib (VERY IMPORTANT for server)
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+from sklearn.ensemble import RandomForestRegressor
+
 app = Flask(__name__)
 
+# Ensure folders exist
+UPLOAD_FOLDER = "uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs("static", exist_ok=True)
+
 @app.route("/", methods=["GET", "POST"])
-def index():
+def home():
     prediction = None
+    total_spent = None
+    max_category = None
+    error = None
 
     if request.method == "POST":
-        file = request.files["file"]
-        data = pd.read_csv(file, parse_dates=['Date'])
+        try:
+            file = request.files.get("file")
 
-        # Monthly calculation
-        data['Month'] = data['Date'].dt.to_period('M')
-        monthly = data.groupby('Month')['Amount'].sum()
+            if not file or file.filename == "":
+                error = "❌ No file uploaded"
+                return render_template("index.html", error=error)
 
-        # Prepare ML data
-        monthly_df = monthly.reset_index()
-        monthly_df['MonthNum'] = np.arange(len(monthly_df))
+            filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(filepath)
 
-        X = monthly_df[['MonthNum']]
-        y = monthly_df['Amount']
+            # Read CSV
+            data = pd.read_csv(filepath)
 
-        # Train model
-        model = LinearRegression()
-        model.fit(X, y)
+            # Check required columns
+            required_cols = ["Date", "Category", "Amount"]
+            for col in required_cols:
+                if col not in data.columns:
+                    error = f"❌ Missing column: {col}"
+                    return render_template("index.html", error=error)
 
-        # Predict next month
-        next_month = np.array([[len(monthly_df)]])
-        prediction = model.predict(next_month)[0]
+            # Convert Date
+            # Clean data
+            data['Date'] = pd.to_datetime(data['Date'], errors='coerce')
+            data['Amount'] = pd.to_numeric(data['Amount'], errors='coerce')
 
-        # Plot graph
-        plt.figure()
-        plt.plot(monthly_df['MonthNum'], monthly_df['Amount'], marker='o')
-        plt.title("Monthly Spending")
-        plt.xlabel("Month Number")
-        plt.ylabel("Amount")
+            data = data.dropna(subset=['Date', 'Amount'])
 
-        # Save chart
-        chart_path = os.path.join("static", "chart.png")
-        plt.savefig(chart_path)
-        plt.close()
+            # Monthly grouping
+            data['Month'] = data['Date'].dt.to_period('M')
+            monthly = data.groupby('Month')['Amount'].sum()
 
-    return render_template("index.html", prediction=prediction)
+            monthly_df = monthly.reset_index()
+            monthly_df['MonthNum'] = np.arange(len(monthly_df))
+
+            # ML Model
+            X = monthly_df[['MonthNum']]
+            y = monthly_df['Amount']
+
+            model = RandomForestRegressor()
+            model.fit(X, y)
+
+            next_month = np.array([[len(monthly_df)]])
+            prediction = round(model.predict(next_month)[0], 2)
+
+            # Insights
+            total_spent = int(data['Amount'].sum())
+            max_category = data.groupby("Category")["Amount"].sum().idxmax()
+
+            # 📊 Bar Chart
+            plt.figure()
+            monthly.plot(kind='bar')
+            plt.title("Monthly Expenses")
+            plt.savefig("static/chart.png")
+            plt.close()
+
+            # 🥧 Pie Chart
+            plt.figure()
+            data.groupby("Category")["Amount"].sum().plot(kind='pie', autopct='%1.1f%%')
+            plt.title("Category Distribution")
+            plt.ylabel("")
+            plt.savefig("static/pie.png")
+            plt.close()
+
+        except Exception as e:
+            error = f"⚠️ Error: {str(e)}"
+
+    return render_template("index.html",
+                           prediction=prediction,
+                           total=total_spent,
+                           category=max_category,
+                           error=error)
 
 
+# Render Deployment Fix
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
