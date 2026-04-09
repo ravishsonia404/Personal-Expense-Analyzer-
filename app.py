@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 import pandas as pd
 import numpy as np
 import os
@@ -17,12 +19,32 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
+# ✅ PDF Function (ADD HERE)
+def generate_pdf(prediction, total, category):
+    pdf_path = "static/report.pdf"
+
+    doc = SimpleDocTemplate(pdf_path)
+    styles = getSampleStyleSheet()
+
+    content = []
+
+    content.append(Paragraph("SmartFinance AI Report", styles['Title']))
+    content.append(Spacer(1, 20))
+
+    content.append(Paragraph(f"Predicted Expense: ₹{prediction}", styles['Normal']))
+    content.append(Paragraph(f"Total Spending: ₹{total}", styles['Normal']))
+    content.append(Paragraph(f"Top Category: {category}", styles['Normal']))
+
+    doc.build(content)
+
+    return pdf_path
+
 @app.route("/", methods=["GET", "POST"])
 def home():
     prediction = None
     total_spent = None
     max_category = None
-    error = None
+    pdf_file = None
 
     if request.method == "POST":
         try:
@@ -88,6 +110,9 @@ def home():
             plt.savefig("static/pie.png")
             plt.close()
 
+            # ✅ Generate PDF (ADD HERE)
+            pdf_file = generate_pdf(prediction, total_spent, max_category)
+
         except Exception as e:
             error = f"⚠️ Error: {str(e)}"
 
@@ -95,8 +120,9 @@ def home():
                            prediction=prediction,
                            total=total_spent,
                            category=max_category,
-                           error=error)
+                           pdf_file=pdf_file)
 
+print("PDF GENERATED")
 
 # Render Deployment Fix
 if __name__ == "__main__":
