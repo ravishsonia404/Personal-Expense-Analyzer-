@@ -1,6 +1,8 @@
 flask
+mysql-connector-python
 pandas
+numpy
 matplotlib
 scikit-learn
+reportlab
 gunicorn
-numpy
