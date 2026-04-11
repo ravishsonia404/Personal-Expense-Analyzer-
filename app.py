@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request
-import mysql.connector
 import os
 import pandas as pd
 import numpy as np
@@ -17,15 +16,6 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
 
 app = Flask(__name__)
-
-# ---------------- DATABASE ----------------
-db = mysql.connector.connect(
-    host="localhost",
-    user="sonia",
-    password="1234",
-    database="mydatabase"
-)
-cursor = db.cursor()
 
 # ---------------- FOLDERS ----------------
 UPLOAD_FOLDER = "uploads"
@@ -60,17 +50,6 @@ def home():
     message = None
 
     if request.method == "POST":
-
-        # 👉 CASE 1: FORM SUBMIT (name/email)
-        if "name" in request.form:
-            name = request.form['name']
-            email = request.form['email']
-
-            query = "INSERT INTO users (name, email) VALUES (%s, %s)"
-            cursor.execute(query, (name, email))
-            db.commit()
-
-            message = "✅ Data Saved to Database!"
 
         # 👉 CASE 2: FILE UPLOAD (AI PROJECT)
         if "file" in request.files:
