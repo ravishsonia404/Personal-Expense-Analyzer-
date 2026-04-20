@@ -1,165 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>SmartFinance AI</title>
+<meta charset="UTF-8">
+<title>SmartFinance AI</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+<style>
+body {
+    font-family: Arial;
+    background: linear-gradient(135deg, black, #00f2fe);
+    color: white;
+    text-align: center;
+}
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, black, #00f2fe);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+.container {
+    padding: 20px;
+}
 
-        .container {
-            width: 95%;
-            max-width: 850px;
-            padding: 30px;
-            border-radius: 20px;
-            backdrop-filter: blur(15px);
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            color: #fff;
-            animation: fadeIn 1s ease;
-        }
+#chatbox {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: #1e1e2f;
+    padding: 10px;
+    border-radius: 10px;
+}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
+#messages {
+    height: 200px;
+    overflow-y: auto;
+}
 
-        h1 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
+.user-msg {
+    text-align: right;
+    color: cyan;
+}
 
-        h2 {
-            margin-top: 25px;
-        }
-
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            border-radius: 10px;
-            border: none;
-            outline: none;
-        }
-
-        input {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-
-        input::placeholder {
-            color: #eee;
-        }
-
-        button {
-            background: linear-gradient(45deg, #ff7eb3, #ff758c);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        button:hover {
-            transform: scale(1.05);
-            background: linear-gradient(45deg, #ff758c, #ff7eb3);
-        }
-
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 15px;
-            background: rgba(0,0,0,0.2);
-        }
-
-        img {
-            width: 100%;
-            margin-top: 10px;
-            border-radius: 10px;
-        }
-
-        .success {
-            color: #00ffcc;
-            text-align: center;
-        }
-
-        .error {
-            color: #ff4d4d;
-            text-align: center;
-        }
-
-        .download {
-            display: block;
-            margin-top: 10px;
-            text-align: center;
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .download:hover {
-            text-decoration: underline;
-        }
-
-    </style>
+.bot-msg {
+    text-align: left;
+    color: lightgreen;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
-    <h1>💼 SmartFinance AI</h1>
-    <p style="text-align:center;">Analyze your expenses with AI 🚀</p>
+<h1>💼 SmartFinance AI</h1>
 
-    {% if message %}
-        <p class="success">{{ message }}</p>
-    {% endif %}
+{% if message %}
+<p>{{ message }}</p>
+{% endif %}
 
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
+<form method="POST" enctype="multipart/form-data">
+<input type="file" name="file">
+<button type="submit">Upload</button>
+</form>
 
-    <h2>📋 Save User Data</h2>
-    <form method="POST">
-        <input type="text" name="name" placeholder="Enter Name" required>
-        <input type="email" name="email" placeholder="Enter Email" required>
-        <button type="submit">Save Data</button>
-    </form>
+{% if total %}
+<h3>Total Spending: ₹{{ total }}</h3>
+<h3>Top Category: {{ category }}</h3>
 
-    <h2>📊 Upload Expense CSV</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Analyze</button>
-    </form>
+<h3>🧠 Insights</h3>
+<p>Reduce spending in {{ category }} to save money.</p>
 
-    {% if prediction %}
-    <div class="result">
-        <h3>📈 Results</h3>
-        <p><strong>Predicted Expense:</strong> ₹{{ prediction }}</p>
-        <p><strong>Total Spending:</strong> ₹{{ total }}</p>
-        <p><strong>Top Category:</strong> {{ category }}</p>
-
-        <img src="/static/chart.png">
-        <img src="/static/pie.png">
-
-        {% if pdf_file %}
-            <a class="download" href="/static/report.pdf" download>
-                📄 Download Report
-            </a>
-        {% endif %}
-    </div>
-    {% endif %}
-
+<img src="/static/chart.png">
+<img src="/static/pie.png">
+{% endif %}
 </div>
+
+<!-- CHATBOT -->
+<div id="chatbox">
+<div id="messages"></div>
+
+<input id="userInput" placeholder="Ask about finance...">
+<button onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+function sendMessage() {
+    let input = document.getElementById("userInput");
+    let msg = input.value;
+
+    if(msg.trim() === "") return;
+
+    let box = document.getElementById("messages");
+
+    box.innerHTML += "<div class='user-msg'>You: " + msg + "</div>";
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: msg})
+    })
+    .then(res => res.json())
+    .then(data => {
+        box.innerHTML += "<div class='bot-msg'>Bot: " + data.reply + "</div>";
+    });
+
+    input.value = "";
+}
+</script>
 
 </body>
 </html>
